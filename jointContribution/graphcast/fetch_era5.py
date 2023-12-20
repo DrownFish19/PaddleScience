@@ -60,23 +60,21 @@ def fetch_one_day(datetime):
     month = "{:02d}".format(datetime.month)
     day = "{:02d}".format(datetime.day)
 
-    request_dict = (
-        {
-            "product_type": "reanalysis",
-            "variable": all_variables,
-            "pressure_level": all_levels,
-            "year": f"{year}",
-            "month": f"{month}",
-            "day": f"{day}",
-            "time": all_times,
-            "format": "netcdf",  # Supported format: grib and netcdf. Default: grib
-            "area": "global",  # North, West, South, East.          Default: global
-            "grid": [
-                0.25,
-                0.25,
-            ],  # Latitude/longitude grid.           Default: 0.25 x 0.25
-        },
-    )
+    request_dict = {
+        "product_type": "reanalysis",
+        "variable": all_variables,
+        "pressure_level": all_levels,
+        "year": f"{year}",
+        "month": f"{month}",
+        "day": f"{day}",
+        "time": all_times,
+        "format": "netcdf",  # Supported format: grib and netcdf. Default: grib
+        "area": "global",  # North, West, South, East.          Default: global
+        "grid": [
+            0.25,
+            0.25,
+        ],  # Latitude/longitude grid.           Default: 0.25 x 0.25
+    }
 
     res = c.retrieve(
         name="reanalysis-era5-complete",
