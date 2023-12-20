@@ -60,8 +60,7 @@ def fetch_one_day(datetime):
     month = "{:02d}".format(datetime.month)
     day = "{:02d}".format(datetime.day)
 
-    c.retrieve(
-        "reanalysis-era5-complete",
+    request_dict = (
         {
             "product_type": "reanalysis",
             "variable": all_variables,
@@ -77,8 +76,14 @@ def fetch_one_day(datetime):
                 0.25,
             ],  # Latitude/longitude grid.           Default: 0.25 x 0.25
         },
-        f"source-era5_date-{year}-{month}-{day}_res-0.25_levels-37_steps-01.nc",
-    )  # Output file. Adapt as you wish.
+    )
+
+    res = c.retrieve(
+        name="reanalysis-era5-complete",
+        request=request_dict,
+        target=f"source-era5_date-{year}-{month}-{day}_res-0.25_levels-37_steps-01.nc",
+    )
+    print(res.location)
 
 
 def main():
