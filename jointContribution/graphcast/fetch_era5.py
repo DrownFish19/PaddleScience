@@ -79,9 +79,6 @@ def fetch_one_day(datetime):
         },
         f"source-era5_date-{year}-{month}-{day}_res-0.25_levels-37_steps-01.nc",
     )  # Output file. Adapt as you wish.
-    print(
-        f"source-era5_date-{year}-{month}-{day}_res-0.25_levels-37_steps-01.nc",
-    )
 
 
 def main():
