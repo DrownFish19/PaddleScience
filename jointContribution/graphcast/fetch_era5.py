@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from itertools import product
 
 import cdsapi
 from args import EXTERNAL_FORCING_VARS
@@ -8,66 +9,33 @@ from args import STATIC_VARS
 from args import TARGET_ATMOSPHERIC_VARS
 from args import TARGET_SURFACE_VARS
 
-all_days = [
-    "01",
-    "02",
-    "03",
-    "04",
-    "05",
-    "06",
-    "07",
-    "08",
-    "09",
-    "10",
-    "11",
-    "12",
-    "13",
-    "14",
-    "15",
-    "16",
-    "17",
-    "18",
-    "19",
-    "20",
-    "21",
-    "22",
-    "23",
-    "24",
-    "25",
-    "26",
-    "27",
-    "28",
-    "29",
-    "30",
-    "31",
-]
-all_times = ["00:00", "06:00", "12:00", "18:00"]
 all_levels = PRESSURE_LEVELS_ERA5_37
 all_variables = list(
     set(TARGET_SURFACE_VARS)
     .union(set(TARGET_ATMOSPHERIC_VARS))
     .union(set(EXTERNAL_FORCING_VARS))
     .union(set(STATIC_VARS))
-    .union(set("total_precipitation"))
+    .union(set(["total_precipitation"]))
 )
 all_variables.remove("total_precipitation_6hr")
 
 c = cdsapi.Client()
 
 
-def fetch_one_day(datetime):
+def fetch_one_day(datetime, var, level):
     year = "{:02d}".format(datetime.year)
     month = "{:02d}".format(datetime.month)
     day = "{:02d}".format(datetime.day)
+    hour = "{:02d}".format(datetime.hour)
 
     request_dict = {
         "product_type": "reanalysis",
-        "variable": all_variables,
-        "pressure_level": all_levels,
+        "variable": var,
+        "pressure_level": level,
         "year": f"{year}",
         "month": f"{month}",
         "day": f"{day}",
-        "time": all_times,
+        "time": f"{hour}:00",
         "format": "netcdf",  # Supported format: grib and netcdf. Default: grib
         "area": "global",  # North, West, South, East.          Default: global
         "grid": [
@@ -76,23 +44,22 @@ def fetch_one_day(datetime):
         ],  # Latitude/longitude grid.           Default: 0.25 x 0.25
     }
 
-    res = c.retrieve(
+    c.retrieve(
         name="reanalysis-era5-complete",
         request=request_dict,
-        target=f"source-era5_date-{year}-{month}-{day}_res-0.25_levels-37_steps-01.nc",
+        target=f"source-era5_date-{year}-{month}-{day}_vat-{var}_res-0.25_levels-{level}_steps-01.nc",
     )
-    print(res.location)
 
 
 def main():
-    start_date = datetime(2016, 1, 1)
-    end_date = datetime(2016, 1, 3)
+    start_date = datetime(2016, 1, 1, 0, 0, 0)
+    end_date = datetime(2016, 1, 3, 0, 0, 0)
 
-    for date in (
-        start_date + timedelta(n) for n in range((end_date - start_date).days + 1)
-    ):
-        print(date.strftime("%Y-%m-%d"))
-        fetch_one_day(date)
+    hours = int((end_date - start_date).total_seconds() / 3600) + 1
+    timedates = [start_date + timedelta(hours=n) for n in range(hours)]
+    for date, var, level in product(timedates, all_variables, all_levels):
+        print(date.strftime("%Y-%m-%d %H:%M:%S"), var, level)
+        fetch_one_day(date, var, level)
 
 
 if __name__ == "__main__":
