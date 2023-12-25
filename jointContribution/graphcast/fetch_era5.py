@@ -143,6 +143,12 @@ HOURS = [
     "22:00",
     "23:00",
 ]
+SELECTED_HOURS = HOURS = [
+    "00:00",
+    "06:00",
+    "12:00",
+    "18:00",
+]
 
 c = cdsapi.Client()
 
@@ -161,7 +167,7 @@ def fetch_one_day_surface_vars(datetime):
         "year": year,
         "month": month,
         "day": day,
-        "time": HOURS,
+        "time": SELECTED_HOURS,
         "format": "netcdf",
         "grid": [0.25, 0.25],
     }
