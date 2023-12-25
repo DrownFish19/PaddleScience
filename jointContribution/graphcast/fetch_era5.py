@@ -221,14 +221,15 @@ def main():
     #     fetch_one_day_surface_single_level_vars(date)
 
     with multiprocessing.Pool(processes=4) as pool:
-        results_days = pool.map(fetch_one_day_surface_vars, timedate_days)
+        results_days = pool.imap(fetch_one_day_surface_vars, timedate_days)
+        for result in results_days:
+            print(result)
     with multiprocessing.Pool(processes=4) as pool:
-        results_years = pool.map(
+        results_years = pool.imap(
             fetch_one_day_surface_single_level_vars, timedate_years
         )
-
-    for result in results_days + results_years:
-        print(result)
+        for result in results_years:
+            print(result)
 
 
 if __name__ == "__main__":
