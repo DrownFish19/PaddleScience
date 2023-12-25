@@ -171,12 +171,11 @@ def fetch_one_day_surface_vars(datetime):
         "format": "netcdf",
         "grid": [0.25, 0.25],
     }
-    c.retrieve(
+    res = c.retrieve(
         "reanalysis-era5-pressure-levels",
         request_dict,
-        file_name,
     )
-    return f"{file_name} downloaded"
+    return res.location, file_name
 
 
 def fetch_one_day_surface_single_level_vars(datetime):
@@ -194,15 +193,15 @@ def fetch_one_day_surface_single_level_vars(datetime):
         "time": HOURS,
         "grid": [0.25, 0.25],
     }
-    c.retrieve(
+    res = c.retrieve(
         "reanalysis-era5-single-levels",
         request_dict,
-        file_name,
     )
-    return f"{file_name} downloaded"
+    return res.location, file_name
 
 
 def main():
+    result_file = open("data.csv", "w")
     start_date = datetime.datetime(2017, 1, 1, 0, 0, 0)
     end_date = datetime.datetime(2020, 1, 1, 0, 0, 0)
 
@@ -222,14 +221,19 @@ def main():
 
     with multiprocessing.Pool(processes=4) as pool:
         results_days = pool.imap(fetch_one_day_surface_vars, timedate_days)
-        for result in results_days:
-            print(result)
+        for url, filename in results_days:
+            print(url, filename)
+            result_file.write(str(url) + ", " + str(filename) + "\n")
+            result_file.flush()
+
     with multiprocessing.Pool(processes=4) as pool:
         results_years = pool.imap(
             fetch_one_day_surface_single_level_vars, timedate_years
         )
-        for result in results_years:
-            print(result)
+        for url, filename in results_years:
+            print(url, filename)
+            result_file.write(str(url) + ", " + str(filename) + "\n")
+            result_file.flush()
 
 
 if __name__ == "__main__":
