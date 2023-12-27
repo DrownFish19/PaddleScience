@@ -218,8 +218,8 @@ def main():
     ]
 
     index = 0
-    with multiprocessing.Pool(processes=4) as pool:
-        results_days = pool.map(fetch_one_day_surface_vars, timedate_days)
+    with multiprocessing.Pool(processes=1) as pool:
+        results_days = pool.imap(fetch_one_day_surface_vars, timedate_days)
         for url, filename in results_days:
             print(url, filename)
             result_file.write(str(url) + ", " + str(filename) + "\n")
@@ -230,8 +230,8 @@ def main():
                 result_file.write("\n")
                 result_file.flush()
 
-    with multiprocessing.Pool(processes=4) as pool:
-        results_years = pool.map(
+    with multiprocessing.Pool(processes=1) as pool:
+        results_years = pool.imap(
             fetch_one_day_surface_single_level_vars, timedate_years
         )
         for url, filename in results_years:
