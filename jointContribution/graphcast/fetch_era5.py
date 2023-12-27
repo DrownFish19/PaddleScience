@@ -1,5 +1,4 @@
 import datetime
-import multiprocessing
 
 import cdsapi
 
@@ -216,28 +215,47 @@ def main():
     timedate_years = [
         datetime.datetime(y, 1, 1) for y in range(start_date.year, end_date.year + 1)
     ]
-
+    # for single thread
     index = 0
-    with multiprocessing.Pool(processes=1) as pool:
-        results_days = pool.imap(fetch_one_day_surface_vars, timedate_days)
-        for url, filename in results_days:
-            print(url, filename)
-            result_file.write(str(url) + ", " + str(filename) + "\n")
-            result_file.flush()
-            index += 1
+    for timedate_day in timedate_days:
+        url, filename = fetch_one_day_surface_vars(timedate_day)
+        print(url, filename, flush=True)
+        result_file.write(str(url) + ", " + str(filename) + "\n")
+        result_file.flush()
 
-            if index % 30 == 0:
-                result_file.write("\n")
-                result_file.flush()
-
-    with multiprocessing.Pool(processes=1) as pool:
-        results_years = pool.imap(
-            fetch_one_day_surface_single_level_vars, timedate_years
-        )
-        for url, filename in results_years:
-            print(url, filename)
-            result_file.write(str(url) + ", " + str(filename) + "\n")
+        index += 1
+        if index % 30 == 0:
+            result_file.write("\n")
             result_file.flush()
+
+    for timedate_year in timedate_years:
+        url, filename = fetch_one_day_surface_single_level_vars(timedate_year)
+        result_file.write(str(url) + ", " + str(filename) + "\n")
+        result_file.flush()
+
+    # for multiprocessing
+    # import multiprocessing
+    # index = 0
+    # with multiprocessing.Pool(processes=1) as pool:
+    #     results_days = pool.imap(fetch_one_day_surface_vars, timedate_days)
+    #     for url, filename in results_days:
+    #         print(url, filename)
+    #         result_file.write(str(url) + ", " + str(filename) + "\n")
+    #         result_file.flush()
+    #         index += 1
+
+    #         if index % 30 == 0:
+    #             result_file.write("\n")
+    #             result_file.flush()
+
+    # with multiprocessing.Pool(processes=1) as pool:
+    #     results_years = pool.imap(
+    #         fetch_one_day_surface_single_level_vars, timedate_years
+    #     )
+    #     for url, filename in results_years:
+    #         print(url, filename)
+    #         result_file.write(str(url) + ", " + str(filename) + "\n")
+    #         result_file.flush()
 
 
 if __name__ == "__main__":
