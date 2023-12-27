@@ -201,9 +201,13 @@ def fetch_one_day_surface_single_level_vars(datetime):
 
 
 def main():
-    result_file = open("data.csv", "w")
-    start_date = datetime.datetime(2017, 1, 1, 0, 0, 0)
-    end_date = datetime.datetime(2020, 1, 1, 0, 0, 0)
+    start_date = datetime.datetime(2018, 1, 1)
+    end_date = datetime.datetime(2020, 6, 30)
+
+    result_file_name = "-".join(
+        [start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d")]
+    )
+    result_file = open(f"data-{result_file_name}.csv", "w")
 
     timedate_days = [
         start_date + datetime.timedelta(n)
@@ -213,21 +217,21 @@ def main():
         datetime.datetime(y, 1, 1) for y in range(start_date.year, end_date.year + 1)
     ]
 
-    # single process
-    # for date in timedate_days:
-    #     fetch_one_day_surface_vars(date)
-    # for date in timedate_years:
-    #     fetch_one_day_surface_single_level_vars(date)
-
+    index = 0
     with multiprocessing.Pool(processes=4) as pool:
-        results_days = pool.imap(fetch_one_day_surface_vars, timedate_days)
+        results_days = pool.map(fetch_one_day_surface_vars, timedate_days)
         for url, filename in results_days:
             print(url, filename)
             result_file.write(str(url) + ", " + str(filename) + "\n")
             result_file.flush()
+            index += 1
+
+            if index % 30 == 0:
+                result_file.write("\n")
+                result_file.flush()
 
     with multiprocessing.Pool(processes=4) as pool:
-        results_years = pool.imap(
+        results_years = pool.map(
             fetch_one_day_surface_single_level_vars, timedate_years
         )
         for url, filename in results_years:
