@@ -142,11 +142,31 @@ HOURS = [
     "22:00",
     "23:00",
 ]
-SELECTED_HOURS = HOURS = [
+SELECTED_HOURS = [
     "00:00",
+    "01:00",
+    "02:00",
+    "03:00",
+    "04:00",
+    "05:00",
     "06:00",
+    "07:00",
+    "08:00",
+    "09:00",
+    "10:00",
+    "11:00",
     "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
     "18:00",
+    "19:00",
+    "20:00",
+    "21:00",
+    "22:00",
+    "23:00",
 ]
 
 c = cdsapi.Client()
@@ -156,47 +176,58 @@ def fetch_one_day_surface_vars(datetime):
     year = "{:02d}".format(datetime.year)
     month = "{:02d}".format(datetime.month)
     day = "{:02d}".format(datetime.day)
-    file_name = (
-        f"surface-source-era5_date-{year}-{month}-{day}_res-0.25_levels-37_steps-01.nc"
-    )
-    request_dict = {
-        "product_type": "reanalysis",
-        "variable": INPUT_SURFACE_VARS,
-        "pressure_level": PRESSURE_LEVEL,
-        "year": year,
-        "month": month,
-        "day": day,
-        "time": SELECTED_HOURS,
-        "format": "netcdf",
-        "grid": [0.25, 0.25],
-    }
-    res = c.retrieve(
-        "reanalysis-era5-pressure-levels",
-        request_dict,
-    )
-    return res.location, file_name
+
+    urls = []
+    for hour in SELECTED_HOURS:
+        file_name = f"surface-source-era5_date-{year}-{month}-{day}-{hour[:2]}_res-0.25_levels-37_steps-01.nc"
+        print(file_name)
+        request_dict = {
+            "product_type": "reanalysis",
+            "variable": INPUT_SURFACE_VARS,
+            "pressure_level": PRESSURE_LEVEL,
+            "year": year,
+            "month": month,
+            "day": day,
+            "time": hour,
+            "format": "netcdf",
+            "grid": [0.25, 0.25],
+        }
+        res = c.retrieve(
+            "reanalysis-era5-pressure-levels",
+            request_dict,
+            file_name,
+        )
+        urls.append(str(res.location) + ", " + str(file_name))
+    return "\n".join(urls)
 
 
 def fetch_one_day_surface_single_level_vars(datetime):
     year = "{:02d}".format(datetime.year)
     month = "{:02d}".format(datetime.month)
     day = "{:02d}".format(datetime.day)
-    file_name = f"source-era5_date-{year}-{month}-{day}_res-0.25_levels-01_steps-01.nc"
-    request_dict = {
-        "product_type": "reanalysis",
-        "format": "netcdf",
-        "variable": INPUT_SURFACE_SINGLE_LEVEL_VARS,
-        "year": year,
-        "month": MONTHES,
-        "day": DAYS,
-        "time": HOURS,
-        "grid": [0.25, 0.25],
-    }
-    res = c.retrieve(
-        "reanalysis-era5-single-levels",
-        request_dict,
-    )
-    return res.location, file_name
+    
+    urls = []
+    for hour in SELECTED_HOURS:
+        file_name = (
+            f"source-era5_date-{year}-{month}-{day}-{hour[:2]}_res-0.25_levels-01_steps-01.nc"
+        )
+        request_dict = {
+            "product_type": "reanalysis",
+            "format": "netcdf",
+            "variable": INPUT_SURFACE_SINGLE_LEVEL_VARS,
+            "year": year,
+            "month": MONTHES,
+            "day": DAYS,
+            "time": hour,
+            "grid": [0.25, 0.25],
+        }
+        res = c.retrieve(
+            "reanalysis-era5-single-levels",
+            request_dict,
+            file_name,
+        )
+        urls.append(str(res.location) + ", " + str(file_name))
+    return "\n".join(urls)
 
 
 def main():
@@ -216,21 +247,16 @@ def main():
         datetime.datetime(y, 1, 1) for y in range(start_date.year, end_date.year + 1)
     ]
     # for single thread
-    index = 0
     for timedate_day in timedate_days:
-        url, filename = fetch_one_day_surface_vars(timedate_day)
-        print(url, filename, flush=True)
-        result_file.write(str(url) + ", " + str(filename) + "\n")
+        urls = fetch_one_day_surface_vars(timedate_day)
+        print(urls, flush=True)
+        result_file.write(urls + "\n")
         result_file.flush()
 
-        index += 1
-        if index % 30 == 0:
-            result_file.write("\n")
-            result_file.flush()
-
     for timedate_year in timedate_years:
-        url, filename = fetch_one_day_surface_single_level_vars(timedate_year)
-        result_file.write(str(url) + ", " + str(filename) + "\n")
+        urls = fetch_one_day_surface_single_level_vars(timedate_year)
+        print(urls, flush=True)
+        result_file.write(urls + "\n")
         result_file.flush()
 
     # for multiprocessing
