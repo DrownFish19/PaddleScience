@@ -1,6 +1,40 @@
 import datetime
 
 import cdsapi
+import requests
+import threading
+
+
+def download_chunk(url, start, end, filename):
+    headers = {"Range": f"bytes={start}-{end}"}
+    r = requests.get(url, headers=headers, stream=True)
+    with open(filename, "r+b") as fp:
+        fp.seek(start)
+        fp.write(r.content)
+
+
+def download_file(url, filename, num_threads=4):
+    r = requests.head(url)
+    try:
+        file_size = int(r.headers["content-length"])
+    except:
+        print("无法获取文件大小")
+        return
+
+    part = file_size // num_threads
+    fp = open(filename, "wb")
+    fp.truncate(file_size)
+    fp.close()
+
+    for i in range(num_threads):
+        start = part * i
+        end = start + part
+        if i == num_threads - 1:
+            end = file_size
+        threading.Thread(
+            target=download_chunk, args=(url, start, end, filename)
+        ).start()
+
 
 INPUT_SURFACE_VARS = [
     "divergence",
@@ -195,8 +229,9 @@ def fetch_one_day_surface_vars(datetime):
         res = c.retrieve(
             "reanalysis-era5-pressure-levels",
             request_dict,
-            file_name,
+            # file_name,
         )
+        download_file(url=res.location, filename=file_name, num_threads=8)
         urls.append(str(res.location) + ", " + str(file_name))
     return "\n".join(urls)
 
@@ -205,28 +240,26 @@ def fetch_one_day_surface_single_level_vars(datetime):
     year = "{:02d}".format(datetime.year)
     month = "{:02d}".format(datetime.month)
     day = "{:02d}".format(datetime.day)
-    
+
     urls = []
-    for hour in SELECTED_HOURS:
-        file_name = (
-            f"source-era5_date-{year}-{month}-{day}-{hour[:2]}_res-0.25_levels-01_steps-01.nc"
-        )
-        request_dict = {
-            "product_type": "reanalysis",
-            "format": "netcdf",
-            "variable": INPUT_SURFACE_SINGLE_LEVEL_VARS,
-            "year": year,
-            "month": MONTHES,
-            "day": DAYS,
-            "time": hour,
-            "grid": [0.25, 0.25],
-        }
-        res = c.retrieve(
-            "reanalysis-era5-single-levels",
-            request_dict,
-            file_name,
-        )
-        urls.append(str(res.location) + ", " + str(file_name))
+    file_name = f"source-era5_date-{year}-{month}-{day}_res-0.25_levels-01_steps-01.nc"
+    request_dict = {
+        "product_type": "reanalysis",
+        "format": "netcdf",
+        "variable": INPUT_SURFACE_SINGLE_LEVEL_VARS,
+        "year": year,
+        "month": MONTHES,
+        "day": DAYS,
+        "time": HOURS,
+        "grid": [0.25, 0.25],
+    }
+    res = c.retrieve(
+        "reanalysis-era5-single-levels",
+        request_dict,
+        # file_name,
+    )
+    download_file(url=res.location, filename=file_name, num_threads=8)
+    urls.append(str(res.location) + ", " + str(file_name))
     return "\n".join(urls)
 
 
